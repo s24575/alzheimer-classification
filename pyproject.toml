@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "alzheimer-classification"
+version = "0.1.0"
+description = "Detecting the stage of Alzheimers based on MRI images."
+authors = ["s24575 <sawickigrzegorz66@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pre-commit = "^3.7.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
