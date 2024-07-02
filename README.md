@@ -1,1 +1,1 @@
-# covid-19-detection
+# Detecting the stage of Alzheimer's based on MRI images.
