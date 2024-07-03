@@ -1,3 +1,7 @@
+# Custom
+lightning_logs/
+saved_models/
+
 # PyCharm specific
 .idea/
 

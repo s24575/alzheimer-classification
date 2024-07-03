@@ -17,8 +17,8 @@ class AlzheimerDataModule(pl.LightningDataModule):
     def setup(self, stage: str = None) -> None:
         transform = transforms.Compose(
             [
-                transforms.Resize((256, 256)),
-                # transforms.Grayscale(num_output_channels=1),
+                transforms.Resize((128, 128)),
+                transforms.Grayscale(num_output_channels=1),
                 transforms.ToTensor(),
             ]
         )
@@ -27,28 +27,20 @@ class AlzheimerDataModule(pl.LightningDataModule):
         test_dir = os.path.join(self.root_dir, "test")
 
         full_train_dataset = datasets.ImageFolder(train_dir, transform=transform)
+        self.test_dataset = datasets.ImageFolder(test_dir, transform=transform)
+        print(self.test_dataset.class_to_idx)
 
-        self.train_dataset, self.test_dataset = random_split(
-            full_train_dataset, [0.9, 0.1]
-        )
-
-        self.val_dataset = datasets.ImageFolder(test_dir, transform=transform)
-
-        self.train_dataset, _ = random_split(
-            self.train_dataset, [5, len(self.train_dataset) - 5]
-        )
-        self.val_dataset, _ = random_split(
-            self.val_dataset, [5, len(self.val_dataset) - 5]
-        )
-        self.test_dataset, _ = random_split(
-            self.test_dataset, [5, len(self.test_dataset) - 5]
+        train_size = int(0.8 * len(full_train_dataset))
+        val_size = len(full_train_dataset) - train_size
+        self.train_dataset, self.val_dataset = random_split(
+            full_train_dataset, [train_size, val_size]
         )
 
     def train_dataloader(self) -> DataLoader:
         return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
 
     def val_dataloader(self) -> DataLoader:
-        return DataLoader(self.val_dataset, batch_size=self.batch_size)
+        return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False)
 
     def test_dataloader(self) -> DataLoader:
-        return DataLoader(self.test_dataset, batch_size=self.batch_size)
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False)

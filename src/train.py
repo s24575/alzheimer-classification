@@ -6,15 +6,16 @@ import torch
 from pytorch_lightning.loggers import TensorBoardLogger
 
 from alzheimer_dataset import AlzheimerDataModule
-from models.cnn import CNNModel
-from models.vgg16 import VGG16Model
+from models.generic_model import GenericModel
+from models.model_utils import get_model
 from utils.definitions import ROOT_DIR
 from utils.enums import ModelName
 
 
-def train_model(model: pl.LightningModule, model_name: ModelName) -> None:
+def train_model(model: GenericModel, model_name: ModelName) -> None:
     dataset_dir = os.path.join(ROOT_DIR, "dataset")
-    data_module = AlzheimerDataModule(dataset_dir, batch_size=1)
+    data_module = AlzheimerDataModule(dataset_dir, batch_size=4)
+    data_module.setup()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
@@ -31,19 +32,6 @@ def train_model(model: pl.LightningModule, model_name: ModelName) -> None:
 
     # Test the model
     trainer.test(model, data_module)
-
-
-def get_model(model_name: ModelName) -> pl.LightningModule:
-    num_classes = 4
-
-    print("Loading the model...")
-
-    if model_name == ModelName.VGG16:
-        return VGG16Model(num_classes=num_classes)
-    elif model_name == ModelName.CNN:
-        return CNNModel(num_classes=num_classes)
-    else:
-        raise ValueError(f"Unsupported model name: {model_name}")
 
 
 def main() -> None:
