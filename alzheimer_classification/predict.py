@@ -2,10 +2,9 @@ import argparse
 import os
 
 import torch
+from models.model_utils import ModelName, load_model
 from PIL import Image
 from torchvision import transforms
-
-from models.model_utils import ModelName, load_model
 from utils.definitions import CLASS_NAMES, SAVED_MODELS_DIR
 
 
@@ -40,7 +39,7 @@ def predict_image(model: torch.nn.Module, image_tensor: torch.Tensor) -> torch.T
     return torch.nn.functional.softmax(output, dim=1)
 
 
-def main() -> None:
+def predict() -> None:
     """
     Main function to parse command-line arguments and perform image prediction.
     """
@@ -102,4 +101,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    predict()

@@ -3,11 +3,10 @@ import os
 
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning.loggers import TensorBoardLogger
-
 from alzheimer_dataset import AlzheimerDataModule
 from models.generic_model import GenericModel
 from models.model_utils import ModelName, get_model
+from pytorch_lightning.loggers import TensorBoardLogger
 from utils.definitions import ROOT_DIR
 
 
@@ -48,7 +47,7 @@ def train_model(model: GenericModel, model_name: ModelName) -> None:
     trainer.test(model, data_module)
 
 
-def main() -> None:
+def train() -> None:
     """
     Main function to parse command-line arguments and initiate model training.
     """
@@ -88,4 +87,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    train()
