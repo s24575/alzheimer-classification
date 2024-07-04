@@ -5,6 +5,14 @@ from torchmetrics import AUROC
 
 
 class GenericModel(pl.LightningModule):
+    """
+    A generic model class for PyTorch Lightning that wraps a given model and
+    includes various metrics for training, validation, and testing phases.
+
+    Args:
+        model (torch.nn.Module): The neural network model to be wrapped.
+    """
+
     def __init__(self, model: torch.nn.Module):
         super(GenericModel, self).__init__()
 
@@ -63,16 +71,39 @@ class GenericModel(pl.LightningModule):
         self.val_outputs = None
         self.val_labels = None
 
-        self.save_hyperparameters()
-
     def configure_optimizers(self) -> torch.optim.Optimizer:
+        """
+        Configure the optimizer for the model.
+
+        Returns:
+            torch.optim.Optimizer: The Adam optimizer with a learning rate of 0.001.
+        """
         optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
         return optimizer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Define the forward pass of the model.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            torch.Tensor: Output tensor.
+        """
         return self.model(x)
 
     def training_step(self, batch: tuple, batch_idx: int) -> torch.Tensor:
+        """
+        Define the training step.
+
+        Args:
+            batch (tuple): A batch of data, containing images and labels.
+            batch_idx (int): The index of the batch.
+
+        Returns:
+            torch.Tensor: The computed loss.
+        """
         images, labels = batch
 
         outputs = self(images)
@@ -100,6 +131,16 @@ class GenericModel(pl.LightningModule):
         return loss
 
     def validation_step(self, batch: tuple, batch_idx: int) -> torch.Tensor:
+        """
+        Define the validation step.
+
+        Args:
+            batch (tuple): A batch of data, containing images and labels.
+            batch_idx (int): The index of the batch.
+
+        Returns:
+            torch.Tensor: The computed loss.
+        """
         images, labels = batch
 
         outputs = self(images)
@@ -130,11 +171,24 @@ class GenericModel(pl.LightningModule):
         return loss
 
     def on_validation_epoch_end(self) -> None:
+        """
+        Perform actions at the end of the validation epoch, such as updating and logging the confusion matrix.
+        """
         self.confusion_matrix.update(self.val_outputs, self.val_labels)
         fig, ax = self.confusion_matrix.plot()
         self.logger.experiment.add_figure("Confusion matrix", fig, self.current_epoch)
 
     def test_step(self, batch: tuple, batch_idx: int) -> torch.Tensor:
+        """
+        Define the test step.
+
+        Args:
+            batch (tuple): A batch of data, containing images and labels.
+            batch_idx (int): The index of the batch.
+
+        Returns:
+            torch.Tensor: The computed loss.
+        """
         images, labels = batch
 
         outputs = self(images)

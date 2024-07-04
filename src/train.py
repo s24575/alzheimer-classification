@@ -7,14 +7,28 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 from alzheimer_dataset import AlzheimerDataModule
 from models.generic_model import GenericModel
-from models.model_utils import get_model
+from models.model_utils import ModelName, get_model
 from utils.definitions import ROOT_DIR
-from utils.enums import ModelName
 
 
 def train_model(model: GenericModel, model_name: ModelName) -> None:
+    """
+    Function to train the given PyTorch Lightning model using a specified data module.
+
+    Args:
+        model (GenericModel): The PyTorch Lightning model to train.
+        model_name (ModelName): Enum value specifying the model name.
+    """
+    train_transform = model.model.get_train_transform()
+    test_transform = model.model.get_test_transform()
+
     dataset_dir = os.path.join(ROOT_DIR, "dataset")
-    data_module = AlzheimerDataModule(dataset_dir, batch_size=4)
+    data_module = AlzheimerDataModule(
+        dataset_dir,
+        batch_size=4,
+        train_transform=train_transform,
+        test_transform=test_transform,
+    )
     data_module.setup()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -25,7 +39,7 @@ def train_model(model: GenericModel, model_name: ModelName) -> None:
     logger = TensorBoardLogger(lightning_logs_dir, name=model_name)
 
     # Setup trainer
-    trainer = pl.Trainer(max_epochs=10, logger=logger, log_every_n_steps=10)
+    trainer = pl.Trainer(max_epochs=10, logger=logger, log_every_n_steps=1)
 
     # Train the model
     trainer.fit(model, data_module)
@@ -35,6 +49,9 @@ def train_model(model: GenericModel, model_name: ModelName) -> None:
 
 
 def main() -> None:
+    """
+    Main function to parse command-line arguments and initiate model training.
+    """
     parser = argparse.ArgumentParser()
 
     parser.add_argument(

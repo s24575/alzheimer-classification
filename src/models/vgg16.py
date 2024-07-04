@@ -1,10 +1,18 @@
 import torch
 from torch import nn
-from torchvision import models
+from torchvision import models, transforms
 from torchvision.models import VGG16_Weights
 
 
 class VGG16Model(nn.Module):
+    """
+    Standard VGG16 model pretrained on ImageNet dataset with a modified
+    classifier to match the number of classes on output.
+
+    Args:
+        num_classes (int): The number of output classes for the classifier.
+    """
+
     def __init__(self, num_classes: int):
         super().__init__()
 
@@ -25,4 +33,45 @@ class VGG16Model(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass of the model.
+
+        Args:
+            x (torch.Tensor): The input tensor.
+
+        Returns:
+            torch.Tensor: The output tensor.
+        """
         return self.model(x)
+
+    @staticmethod
+    def get_train_transform() -> transforms.Compose:
+        """
+        Get the transformation to be applied to training images.
+
+        Returns:
+            transforms.Compose: The transformation pipeline for training images.
+        """
+        return transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.Grayscale(num_output_channels=3),
+                transforms.ToTensor(),
+            ]
+        )
+
+    @staticmethod
+    def get_test_transform() -> transforms.Compose:
+        """
+        Get the transformation to be applied to testing images.
+
+        Returns:
+            transforms.Compose: The transformation pipeline for testing images.
+        """
+        return transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.Grayscale(num_output_channels=3),
+                transforms.ToTensor(),
+            ]
+        )

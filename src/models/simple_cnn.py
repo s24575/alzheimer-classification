@@ -1,8 +1,16 @@
 import torch
 from torch import nn
+from torchvision import transforms
 
 
 class SimpleCNN(nn.Module):
+    """
+    A simple Convolutional Neural Network (CNN) for image classification.
+
+    Args:
+        num_classes (int): The number of output classes.
+    """
+
     def __init__(self, num_classes: int):
         super(SimpleCNN, self).__init__()
 
@@ -19,9 +27,50 @@ class SimpleCNN(nn.Module):
         self.fc2 = nn.Linear(64, self.num_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass of the model.
+
+        Args:
+            x (torch.Tensor): The input tensor.
+
+        Returns:
+            torch.Tensor: The output tensor.
+        """
         x = self.pool1(self.relu1(self.conv1(x)))
         x = self.pool2(self.relu2(self.conv2(x)))
         x = x.view(-1, 32 * 30 * 30)
         x = self.relu3(self.fc1(x))
         x = self.fc2(x)
         return x
+
+    @staticmethod
+    def get_train_transform() -> transforms.Compose:
+        """
+        Get the transformation to be applied to training images.
+
+        Returns:
+            transforms.Compose: The transformation pipeline for training images.
+        """
+        return transforms.Compose(
+            [
+                transforms.Resize((128, 128)),
+                transforms.Grayscale(num_output_channels=1),
+                transforms.ToTensor(),
+            ]
+        )
+
+    @staticmethod
+    def get_test_transform() -> transforms.Compose:
+        """
+        Get the transformation to be applied to testing images.
+
+        Returns:
+            transforms.Compose: The transformation pipeline for testing images.
+        """
+        return transforms.Compose(
+            [
+                transforms.Resize((128, 128)),
+                transforms.Grayscale(num_output_channels=1),
+                transforms.ToTensor(),
+            ]
+        )

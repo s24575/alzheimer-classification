@@ -5,30 +5,45 @@ import torch
 from PIL import Image
 from torchvision import transforms
 
-from models.model_utils import load_model
-from utils.definitions import SAVED_MODELS_DIR
-from utils.enums import ModelName
+from models.model_utils import ModelName, load_model
+from utils.definitions import CLASS_NAMES, SAVED_MODELS_DIR
 
 
-def preprocess_image(image_path: str) -> torch.Tensor:
-    transform = transforms.Compose(
-        [
-            transforms.Resize((128, 128)),
-            transforms.Grayscale(num_output_channels=3),
-            transforms.ToTensor(),
-        ]
-    )
+def preprocess_image(image_path: str, transform: transforms.Compose) -> torch.Tensor:
+    """
+    Preprocesses an image for prediction by applying the specified transformation.
+
+    Args:
+        image_path (str): Path to the image file.
+        transform (transforms.Compose): Transformations to apply to the image.
+
+    Returns:
+        torch.Tensor: Preprocessed image tensor ready for prediction.
+    """
     image = Image.open(image_path)
     return transform(image).unsqueeze(0)
 
 
 def predict_image(model: torch.nn.Module, image_tensor: torch.Tensor) -> torch.Tensor:
+    """
+    Predicts the class probabilities for an image tensor using the specified model.
+
+    Args:
+        model (torch.nn.Module): The pre-trained PyTorch model.
+        image_tensor (torch.Tensor): Preprocessed image tensor.
+
+    Returns:
+        torch.Tensor: Predicted class probabilities.
+    """
     with torch.no_grad():
         output = model(image_tensor)
     return torch.nn.functional.softmax(output, dim=1)
 
 
 def main() -> None:
+    """
+    Main function to parse command-line arguments and perform image prediction.
+    """
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -64,10 +79,15 @@ def main() -> None:
         raise ValueError(f"Could not find image file: {args.image_path}")
 
     # Load the model
-    model = load_model(args.model_name, model_path)
+    try:
+        model = load_model(args.model_name, model_path)
+    except Exception as e:
+        print(f"Error occurred while loading the model: {e}")
+        return
+    test_transform = model.model.get_test_transform()
 
     # Preprocess the image
-    image_tensor = preprocess_image(args.image_path)
+    image_tensor = preprocess_image(args.image_path, test_transform)
 
     # Predict the class
     predictions = predict_image(model, image_tensor)
@@ -76,13 +96,7 @@ def main() -> None:
     predicted_class = torch.argmax(predictions, dim=1).item()
     confidence = torch.max(predictions).item()
 
-    class_names = [
-        "MildDemented",
-        "ModerateDemented",
-        "NonDemented",
-        "VeryMildDemented",
-    ]
-    predicted_class_name = class_names[predicted_class]
+    predicted_class_name = CLASS_NAMES[predicted_class]
 
     print(f"Predicted {predicted_class_name} with confidence: {confidence:.2f}")
 
