@@ -1,4 +1,4 @@
-# Stage of Alzheimer's classification.
+# Stage of Alzheimer's classification
 
 The purpose of this project is to detect the stage of Alzheimer's based on MRI images.
 
@@ -8,14 +8,14 @@ The models are designed to be trained on [Alzheimer's Dataset ( 4 class of Image
 It has already been downloaded and is available in the dataset/ directory.
 
 <p align="center">
-  <img src="images/train_dataset.png" alt="Train Dataset" width="45%" />
-  <img src="images/test_dataset.png" alt="Test Dataset" width="45%" />
+  <img src="images/train_dataset.png" alt="Train Dataset" width="49%" />
+  <img src="images/test_dataset.png" alt="Test Dataset" width="49%" />
 </p>
 
 # Usage
 
 ### Requirements
-* Python 3.11+
+* Python 3.9+
 * Poetry
 
 ### Training a model
@@ -26,7 +26,7 @@ It has already been downloaded and is available in the dataset/ directory.
 
 ### Predicting with a model
 
-    python predict.py -m vgg16 -f model_filename -i path_to_image
+    python predict.py -m vgg16 -f model_filename -i ../dataset/test/ModerateDemented/27.jpg
         -m/--model_name: Name of the model to use for prediction (vgg16 or cnn).
         -f/--filename: Filename of the trained model.
         -i/--image_path: Path to the image file to predict.

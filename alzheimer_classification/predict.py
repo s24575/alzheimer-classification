@@ -69,7 +69,11 @@ def predict() -> None:
 
     args = parser.parse_args()
 
-    model_path = str(os.path.join(SAVED_MODELS_DIR, args.filename))
+    filename: str = args.filename
+    if not filename.endswith(".pth"):
+        filename += ".pth"
+
+    model_path = str(os.path.join(SAVED_MODELS_DIR, filename))
 
     # Check if paths exist
     if not os.path.exists(model_path):

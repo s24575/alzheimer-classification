@@ -64,11 +64,15 @@ class GenericModel(pl.LightningModule):
         self.val_auroc = AUROC(task="multiclass", num_classes=num_classes)
         self.test_auroc = AUROC(task="multiclass", num_classes=num_classes)
 
-        self.val_confusion_matrix = torchmetrics.classification.MulticlassConfusionMatrix(
-            num_classes=num_classes
+        self.val_confusion_matrix = (
+            torchmetrics.classification.MulticlassConfusionMatrix(
+                num_classes=num_classes
+            )
         )
-        self.test_confusion_matrix = torchmetrics.classification.MulticlassConfusionMatrix(
-            num_classes=num_classes
+        self.test_confusion_matrix = (
+            torchmetrics.classification.MulticlassConfusionMatrix(
+                num_classes=num_classes
+            )
         )
 
         self.val_outputs = None
@@ -182,7 +186,9 @@ class GenericModel(pl.LightningModule):
         """
         self.val_confusion_matrix.update(self.val_outputs, self.val_labels)
         fig, ax = self.val_confusion_matrix.plot()
-        self.logger.experiment.add_figure("val_confusion_matrix", fig, self.current_epoch)
+        self.logger.experiment.add_figure(
+            "val_confusion_matrix", fig, self.current_epoch
+        )
 
     def test_step(self, batch: tuple, batch_idx: int) -> torch.Tensor:
         """
@@ -230,4 +236,6 @@ class GenericModel(pl.LightningModule):
         """
         self.test_confusion_matrix.update(self.test_outputs, self.test_labels)
         fig, ax = self.test_confusion_matrix.plot()
-        self.logger.experiment.add_figure("test_confusion_matrix", fig, self.current_epoch)
+        self.logger.experiment.add_figure(
+            "test_confusion_matrix", fig, self.current_epoch
+        )
