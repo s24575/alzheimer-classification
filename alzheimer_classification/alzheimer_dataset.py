@@ -20,8 +20,7 @@ class DatasetFromSubset(Dataset):
     """
 
     def __init__(self, subset: Subset, transform: transforms.Compose | None = None):
-        indices = torch.arange(3)
-        self.subset = Subset(subset, indices)
+        self.subset = subset
         self.transform = transform
 
     def __getitem__(self, index: int) -> tuple[torch.Tensor, int]:
