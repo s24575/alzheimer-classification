@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "alzheimer-classification"
+name = "alzheimer_classification"
 version = "0.1.0"
 description = "Detecting the stage of Alzheimer's based on MRI images."
 authors = ["s24575 <sawickigrzegorz66@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11.6"
+python = "^3.11"
 pre-commit = "^3.7.1"
 torchvision = "^0.18.1"
 pytorch-lightning = "^2.3.1"

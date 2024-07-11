@@ -64,12 +64,18 @@ class GenericModel(pl.LightningModule):
         self.val_auroc = AUROC(task="multiclass", num_classes=num_classes)
         self.test_auroc = AUROC(task="multiclass", num_classes=num_classes)
 
-        self.confusion_matrix = torchmetrics.classification.MulticlassConfusionMatrix(
+        self.val_confusion_matrix = torchmetrics.classification.MulticlassConfusionMatrix(
+            num_classes=num_classes
+        )
+        self.test_confusion_matrix = torchmetrics.classification.MulticlassConfusionMatrix(
             num_classes=num_classes
         )
 
         self.val_outputs = None
         self.val_labels = None
+
+        self.test_outputs = None
+        self.test_labels = None
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """
@@ -174,9 +180,9 @@ class GenericModel(pl.LightningModule):
         """
         Perform actions at the end of the validation epoch, such as updating and logging the confusion matrix.
         """
-        self.confusion_matrix.update(self.val_outputs, self.val_labels)
-        fig, ax = self.confusion_matrix.plot()
-        self.logger.experiment.add_figure("Confusion matrix", fig, self.current_epoch)
+        self.val_confusion_matrix.update(self.val_outputs, self.val_labels)
+        fig, ax = self.val_confusion_matrix.plot()
+        self.logger.experiment.add_figure("val_confusion_matrix", fig, self.current_epoch)
 
     def test_step(self, batch: tuple, batch_idx: int) -> torch.Tensor:
         """
@@ -213,4 +219,15 @@ class GenericModel(pl.LightningModule):
         self.test_auroc(outputs, labels)
         self.log("test_auroc", self.test_auroc, on_step=False, on_epoch=True)
 
+        self.test_outputs = outputs
+        self.test_labels = labels
+
         return loss
+
+    def on_test_epoch_end(self) -> None:
+        """
+        Perform actions at the end of the test epoch, such as updating and logging the confusion matrix.
+        """
+        self.test_confusion_matrix.update(self.test_outputs, self.test_labels)
+        fig, ax = self.test_confusion_matrix.plot()
+        self.logger.experiment.add_figure("test_confusion_matrix", fig, self.current_epoch)

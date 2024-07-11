@@ -71,8 +71,7 @@ def train() -> None:
     args = parser.parse_args()
 
     saved_models_dir = os.path.join(ROOT_DIR, "saved_models")
-    if not os.path.exists(saved_models_dir):
-        raise ValueError(f"Could not find directory: {saved_models_dir}")
+    os.makedirs(saved_models_dir, exist_ok=True)
 
     model = get_model(args.model_name)
 
@@ -82,7 +81,7 @@ def train() -> None:
     if not filename.endswith(".pth"):
         filename += ".pth"
 
-    save_path = os.path.join(saved_models_dir, args.filename)
+    save_path = os.path.join(saved_models_dir, filename)
     torch.save(model.state_dict(), save_path)
 
 
