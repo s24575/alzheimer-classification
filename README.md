@@ -31,6 +31,12 @@ It has already been downloaded and is available in the dataset/ directory.
         -f/--filename: Filename of the trained model.
         -i/--image_path: Path to the image file to predict.
 
+### Tensorboard
+To view all metrics collected during model training, run:
+```
+tensorboard --logdir ../lightning_logs
+```
+
 # Development
 ## Pre-commits
 Install pre-commits
@@ -38,14 +44,14 @@ https://pre-commit.com/#installation
 
 If you are using VS-code install the extension https://marketplace.visualstudio.com/items?itemName=MarkLarah.pre-commit-vscode
 
-To make a dry-run of the pre-commits to see if your code passes run
+To make a dry-run of the pre-commits, to see if your code passes, run:
 ```
 pre-commit run --all-files
 ```
 
 
 ## Adding python packages
-Dependencies are handled by `poetry` framework, to add new dependency run
+Dependencies are handled by `poetry` framework, to add new a new dependency, run:
 ```
 poetry add <package_name>
 ```
