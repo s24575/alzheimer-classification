@@ -18,6 +18,11 @@ It has already been downloaded and is available in the dataset/ directory.
 * Python 3.9+
 * Poetry
 
+### Installing requirements
+```bash
+poetry install
+```
+
 ### Training a model
 
     python train.py -m vgg16 -f model_filename
@@ -30,7 +35,7 @@ It has already been downloaded and is available in the dataset/ directory.
         -m/--model_name: Name of the model to use for prediction (vgg16 or cnn).
         -f/--filename: Filename of the trained model.
         -i/--image_path: Path to the image file to predict.
-
+ 
 ### Tensorboard
 To view all metrics collected during model training, run:
 ```
