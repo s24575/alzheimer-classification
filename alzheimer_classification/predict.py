@@ -77,9 +77,9 @@ def predict() -> None:
 
     # Check if paths exist
     if not os.path.exists(model_path):
-        raise ValueError(f"Could not find model file: {model_path}")
+        raise FileNotFoundError(f"Could not find model file: {model_path}")
     if not os.path.exists(args.image_path):
-        raise ValueError(f"Could not find image file: {args.image_path}")
+        raise FileNotFoundError(f"Could not find image file: {args.image_path}")
 
     # Load the model
     try:
