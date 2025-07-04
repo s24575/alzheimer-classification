@@ -1,8 +1,11 @@
 import os
 
+import kagglehub
+import numpy as np
 import pytorch_lightning as pl
 import torch
-from torch.utils.data import DataLoader, Dataset, Subset, random_split
+from sklearn.model_selection import StratifiedShuffleSplit
+from torch.utils.data import DataLoader, Dataset, Subset
 from torchvision import datasets, transforms
 
 
@@ -38,7 +41,6 @@ class AlzheimerDataModule(pl.LightningDataModule):
     A PyTorch Lightning DataModule for handling data loading for an Alzheimer's disease classification task.
 
     Args:
-        root_dir (str): The root directory where the train and test data are stored.
         batch_size (int, optional): The batch size for the dataloaders. Defaults to 64.
         train_transform (transforms.Compose, optional): Transformations to apply to the training data.
         test_transform (transforms.Compose, optional): Transformations to apply to the validation/test data.
@@ -46,13 +48,12 @@ class AlzheimerDataModule(pl.LightningDataModule):
 
     def __init__(
         self,
-        root_dir: str,
-        batch_size: int = 64,
+        batch_size: int,
         train_transform: transforms.Compose | None = None,
         test_transform: transforms.Compose | None = None,
     ):
         super().__init__()
-        self.root_dir = root_dir
+        self.root_dir: str | None = None
         self.batch_size = batch_size
 
         self.train_dataset: Dataset | None = None
@@ -62,6 +63,12 @@ class AlzheimerDataModule(pl.LightningDataModule):
         self.train_transform = train_transform
         self.test_transform = test_transform
 
+    def prepare_data(self):
+        self.root_dir = kagglehub.dataset_download(
+            "uraninjo/augmented-alzheimer-mri-dataset"
+        )
+        print("Path to dataset files:", self.root_dir)
+
     def setup(self, stage: str = None) -> None:
         """
         Sets up the datasets for training, validation, and testing.
@@ -69,19 +76,29 @@ class AlzheimerDataModule(pl.LightningDataModule):
         Args:
             stage (str, optional): Stage of setup (fit or test). Defaults to None.
         """
-        train_dir = os.path.join(self.root_dir, "train")
-        test_dir = os.path.join(self.root_dir, "test")
+        augmented_dir = os.path.join(self.root_dir, "AugmentedAlzheimerDataset")
+        full_dataset = datasets.ImageFolder(augmented_dir)
 
-        full_train_dataset = datasets.ImageFolder(train_dir)
-        full_test_dataset = datasets.ImageFolder(test_dir)
+        targets = [label for _, label in full_dataset.samples]
 
-        train_size = int(0.8 * len(full_train_dataset))
-        val_size = len(full_train_dataset) - train_size
-        train_dataset, val_dataset = random_split(
-            full_train_dataset, [train_size, val_size]
+        # First split: train_val (80%) and test (20%)
+        splitter1 = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+        train_val_idx, test_idx = next(splitter1.split(np.zeros(len(targets)), targets))
+
+        # Create test set
+        test_dataset = Subset(full_dataset, test_idx)
+
+        # Now split train_val into train (80% of 80%) and val (20% of 80%)
+        train_val_targets = [targets[i] for i in train_val_idx]
+        splitter2 = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+        train_idx, val_idx = next(
+            splitter2.split(np.zeros(len(train_val_targets)), train_val_targets)
         )
-        test_dataset = Subset(full_test_dataset, range(len(full_test_dataset)))
 
+        train_dataset = Subset(full_dataset, [train_val_idx[i] for i in train_idx])
+        val_dataset = Subset(full_dataset, [train_val_idx[i] for i in val_idx])
+
+        # Apply transforms
         self.train_dataset = DatasetFromSubset(
             train_dataset, transform=self.train_transform
         )
@@ -98,7 +115,11 @@ class AlzheimerDataModule(pl.LightningDataModule):
             DataLoader: DataLoader for the training dataset.
         """
         return DataLoader(
-            self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=3
+            self.train_dataset,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=2,
+            persistent_workers=True,
         )
 
     def val_dataloader(self) -> DataLoader:
@@ -109,7 +130,11 @@ class AlzheimerDataModule(pl.LightningDataModule):
             DataLoader: DataLoader for the validation dataset.
         """
         return DataLoader(
-            self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=3
+            self.val_dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=2,
+            persistent_workers=True,
         )
 
     def test_dataloader(self) -> DataLoader:
@@ -120,5 +145,9 @@ class AlzheimerDataModule(pl.LightningDataModule):
             DataLoader: DataLoader for the test dataset.
         """
         return DataLoader(
-            self.test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=3
+            self.test_dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=2,
+            persistent_workers=True,
         )

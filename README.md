@@ -15,7 +15,7 @@ It has already been downloaded and is available in the dataset/ directory.
 # Usage
 
 ### Requirements
-* Python 3.9+
+* Python 3.10+
 * Poetry
 
 ### Installing requirements
@@ -35,7 +35,7 @@ poetry install
         -m/--model_name: Name of the model to use for prediction (vgg16 or cnn).
         -f/--filename: Filename of the trained model.
         -i/--image_path: Path to the image file to predict.
- 
+
 ### Tensorboard
 To view all metrics collected during model training, run:
 ```

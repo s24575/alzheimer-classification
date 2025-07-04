@@ -23,12 +23,15 @@ class VGG16Model(nn.Module):
         for param in self.model.parameters():
             param.requires_grad = False
 
-        n_inputs = self.model.classifier[6].in_features
+        n_inputs = self.model.classifier[0].in_features
 
-        self.model.classifier[6] = nn.Sequential(
-            nn.Linear(n_inputs, 256),
-            nn.ReLU(),
-            nn.Dropout(0.2),
+        self.model.classifier = nn.Sequential(
+            nn.Linear(n_inputs, 512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(512, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.3),
             nn.Linear(256, self.num_classes),
         )
 
