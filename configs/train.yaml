@@ -1,0 +1,11 @@
+defaults:
+  - _self_
+  - data: alzheimer
+  - model: vgg16
+  - callbacks: default
+  - trainer: default
+  - paths: default
+  - experiment: null
+
+num_classes: 4
+filename: vgg16

@@ -1,11 +1,12 @@
-import argparse
 import os
+from typing import Tuple
 
+import mlflow.pytorch
 import torch
-from models.model_utils import ModelName, load_model
+from models import VGG16Model
 from PIL import Image
 from torchvision import transforms
-from utils.definitions import CLASS_NAMES, SAVED_MODELS_DIR
+from utils.definitions import CLASS_NAMES
 
 
 def preprocess_image(image_path: str, transform: transforms.Compose) -> torch.Tensor:
@@ -19,13 +20,13 @@ def preprocess_image(image_path: str, transform: transforms.Compose) -> torch.Te
     Returns:
         torch.Tensor: Preprocessed image tensor ready for prediction.
     """
-    image = Image.open(image_path)
+    image = Image.open(image_path).convert("RGB")
     return transform(image).unsqueeze(0)
 
 
 def predict_image(model: torch.nn.Module, image_tensor: torch.Tensor) -> torch.Tensor:
     """
-    Predicts the class probabilities for an image tensor using the specified model.
+    Predicts class probabilities from the input tensor using the given model.
 
     Args:
         model (torch.nn.Module): The pre-trained PyTorch model.
@@ -36,73 +37,55 @@ def predict_image(model: torch.nn.Module, image_tensor: torch.Tensor) -> torch.T
     """
     with torch.no_grad():
         output = model(image_tensor)
-    return torch.nn.functional.softmax(output, dim=1)
+        return torch.nn.functional.softmax(output, dim=1)
 
 
-def predict() -> None:
+def load_model_from_mlflow(
+    model_name: str, model_version: str = "latest"
+) -> torch.nn.Module:
     """
-    Main function to parse command-line arguments and perform image prediction.
+    Loads a PyTorch model from MLflow Model Registry.
     """
-    parser = argparse.ArgumentParser()
+    mlflow.set_tracking_uri("http://localhost:5000")
+    model_uri = f"models:/{model_name}/{model_version}"
+    model = mlflow.pytorch.load_model(model_uri)
+    return model
 
-    parser.add_argument(
-        "-m",
-        "--model_name",
-        choices=list(ModelName),
-        required=True,
-        help="Name of the model",
-    )
-    parser.add_argument(
-        "-f",
-        "--filename",
-        type=str,
-        required=True,
-        help="Filename of the trained model file",
-    )
-    parser.add_argument(
-        "-i",
-        "--image_path",
-        type=str,
-        required=True,
-        help="Path to the image file to predict",
-    )
 
-    args = parser.parse_args()
+def predict_image_from_path(image_path: str, model_name: str) -> Tuple[str, float]:
+    """
+    Predicts the class and confidence for a given image path using an MLflow model.
+    """
+    # Load model from MLflow
+    model = load_model_from_mlflow(model_name=model_name)
 
-    filename: str = args.filename
-    if not filename.endswith(".pth"):
-        filename += ".pth"
+    test_transform = VGG16Model.get_test_transform()
 
-    model_path = str(os.path.join(SAVED_MODELS_DIR, filename))
-
-    # Check if paths exist
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Could not find model file: {model_path}")
-    if not os.path.exists(args.image_path):
-        raise FileNotFoundError(f"Could not find image file: {args.image_path}")
-
-    # Load the model
-    try:
-        model = load_model(args.model_name, model_path)
-    except Exception as e:
-        print(f"Error occurred while loading the model: {e}")
-        return
-    test_transform = model.model.get_test_transform()
-
-    # Preprocess the image
-    image_tensor = preprocess_image(args.image_path, test_transform)
-
-    # Predict the class
+    # Preprocess and predict
+    image_tensor = preprocess_image(image_path, test_transform)
     predictions = predict_image(model, image_tensor)
 
-    # Get the predicted class and confidence
     predicted_class = torch.argmax(predictions, dim=1).item()
     confidence = torch.max(predictions).item()
 
     predicted_class_name = CLASS_NAMES[predicted_class]
-
-    print(f"Predicted {predicted_class_name} with confidence: {confidence:.2f}")
+    return predicted_class_name, confidence
 
 
 if __name__ == "__main__":
-    predict()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-i", "--image_path", type=str, required=True, help="Path to image"
+    )
+    parser.add_argument("-m", "--model_name", type=str, help="MLflow model name")
+    args = parser.parse_args()
+
+    if not os.path.exists(args.image_path):
+        raise FileNotFoundError(f"Image not found: {args.image_path}")
+
+    pred_class, conf = predict_image_from_path(
+        args.image_path, model_name=args.model_name
+    )
+    print(f"Predicted {pred_class} with confidence {conf:.2f}")

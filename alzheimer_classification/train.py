@@ -1,98 +1,76 @@
-import argparse
-import os
-
+import hydra
+import mlflow
 import pytorch_lightning as pl
 import torch
 from alzheimer_dataset import AlzheimerDataModule
-from models.generic_model import GenericModel
-from models.model_utils import ModelName, get_model
+from models.model_utils import get_model
+from omegaconf import DictConfig
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
-from pytorch_lightning.loggers import TensorBoardLogger
-from utils.definitions import ROOT_DIR
+from pytorch_lightning.loggers import MLFlowLogger
 
 
-def train_model(model: GenericModel, model_name: ModelName) -> None:
-    """
-    Function to train the given PyTorch Lightning model using a specified data module.
+def train(cfg: DictConfig) -> None:
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = get_model(cfg.model.name).to(device)
 
-    Args:
-        model (GenericModel): The PyTorch Lightning model to train.
-        model_name (ModelName): Enum value specifying the model name.
-    """
     # Setup data module
     train_transform = model.model.get_train_transform()
     test_transform = model.model.get_test_transform()
 
     data_module = AlzheimerDataModule(
-        batch_size=64,
+        batch_size=cfg.data.batch_size,
         train_transform=train_transform,
         test_transform=test_transform,
     )
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-
-    # Setup logger
-    lightning_logs_dir = os.path.join(ROOT_DIR, "lightning_logs")
-    logger = TensorBoardLogger(lightning_logs_dir, name=model_name)
-
+    # Callbacks
     checkpoint_callback = ModelCheckpoint(
-        monitor="val_loss", mode="min", save_top_k=1, filename="{epoch}-{val_loss:.2f}"
-    )
-    early_stop_callback = EarlyStopping(monitor="val_loss", patience=5, mode="min")
-
-    # Setup trainer
-    trainer = pl.Trainer(
-        max_epochs=10,
-        callbacks=[checkpoint_callback, early_stop_callback],
-        logger=logger,
-        log_every_n_steps=1,
+        monitor=cfg.callbacks.model_checkpoint.monitor,
+        mode=cfg.callbacks.model_checkpoint.mode,
+        filename=cfg.callbacks.model_checkpoint.filename,
     )
 
-    # Train the model
-    trainer.fit(model, data_module)
+    early_stop_callback = EarlyStopping(
+        monitor=cfg.callbacks.early_stopping.monitor,
+        patience=cfg.callbacks.early_stopping.patience,
+        mode=cfg.callbacks.early_stopping.mode,
+    )
+
+    mlflow.pytorch.autolog()
+    mlflow.set_tracking_uri("http://localhost:5000")
+    with mlflow.start_run(log_system_metrics=True, run_name="training_test") as run:
+        # Setup logger
+        mlf_logger = MLFlowLogger(
+            experiment_name="alzheimer-classification",
+            tracking_uri=mlflow.get_tracking_uri(),
+            log_model=True,
+            run_id=run.info.run_id,
+        )
+
+        # Setup trainer
+        trainer = pl.Trainer(
+            max_epochs=cfg.trainer.max_epochs,
+            callbacks=[checkpoint_callback, early_stop_callback],
+            logger=mlf_logger,
+            log_every_n_steps=1,
+            # fast_dev_run=True,
+            # limit_train_batches=1,
+            # limit_val_batches=1,
+            # limit_test_batches=1,
+            # num_sanity_val_steps=0,
+        )
+
+        # Train the model
+        trainer.fit(model, data_module)
 
     # Test the model
     trainer.test(model, data_module)
 
 
-def train() -> None:
-    """
-    Main function to parse command-line arguments and initiate model training.
-    """
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "-m",
-        "--model_name",
-        choices=list(ModelName),
-        required=True,
-        help="Name of the model",
-    )
-    parser.add_argument(
-        "-f",
-        "--filename",
-        type=str,
-        required=True,
-        help="Filename to save the trained model",
-    )
-
-    args = parser.parse_args()
-
-    saved_models_dir = os.path.join(ROOT_DIR, "saved_models")
-    os.makedirs(saved_models_dir, exist_ok=True)
-
-    model = get_model(args.model_name)
-
-    train_model(model, args.model_name)
-
-    filename: str = args.filename
-    if not filename.endswith(".pth"):
-        filename += ".pth"
-
-    save_path = os.path.join(saved_models_dir, filename)
-    torch.save(model.state_dict(), save_path)
+@hydra.main(config_path="../configs", config_name="train.yaml", version_base="1.3")
+def main(cfg: DictConfig) -> None:
+    train(cfg)
 
 
 if __name__ == "__main__":
-    train()
+    main()

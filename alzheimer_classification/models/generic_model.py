@@ -68,10 +68,10 @@ class GenericModel(pl.LightningModule):
         self.test_confusion_matrix = MulticlassConfusionMatrix(num_classes=num_classes)
 
         # For accumulating confusion matrix inputs
-        self.val_preds = []
-        self.val_targets = []
-        self.test_preds = []
-        self.test_targets = []
+        self.val_preds: list[torch.Tensor] = []
+        self.val_targets: list[torch.Tensor] = []
+        self.test_preds: list[torch.Tensor] = []
+        self.test_targets: list[torch.Tensor] = []
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """
@@ -108,8 +108,6 @@ class GenericModel(pl.LightningModule):
         images, labels = batch
         outputs = self(images)
         loss = self.criterion(outputs, labels)
-
-        self.log("train_loss", loss, on_step=True, on_epoch=True)
         probs = F.softmax(outputs, dim=1)
 
         self.train_acc(probs, labels)
@@ -118,7 +116,8 @@ class GenericModel(pl.LightningModule):
         self.train_macro_f1(probs, labels)
         self.train_auroc(probs, labels)
 
-        self.log("train_acc", self.train_acc, on_epoch=True)
+        self.log("train_loss", loss, on_epoch=True, prog_bar=True)
+        self.log("train_acc", self.train_acc, on_epoch=True, prog_bar=True)
         self.log("train_precision", self.train_precision, on_epoch=True)
         self.log("train_recall", self.train_recall, on_epoch=True)
         self.log("train_macro_f1", self.train_macro_f1, on_epoch=True)
@@ -148,8 +147,8 @@ class GenericModel(pl.LightningModule):
         self.val_macro_f1(probs, labels)
         self.val_auroc(probs, labels)
 
-        self.log("val_loss", loss, on_step=False, on_epoch=True)
-        self.log("val_acc", self.val_acc, on_epoch=True)
+        self.log("val_loss", loss, on_epoch=True, prog_bar=True)
+        self.log("val_acc", self.val_acc, on_epoch=True, prog_bar=True)
         self.log("val_precision", self.val_precision, on_epoch=True)
         self.log("val_recall", self.val_recall, on_epoch=True)
         self.log("val_macro_f1", self.val_macro_f1, on_epoch=True)
@@ -162,7 +161,7 @@ class GenericModel(pl.LightningModule):
 
     def on_validation_epoch_end(self) -> None:
         """
-        Perform actions at the end of the validation epoch, such as updating and logging the confusion matrix.
+        Perform actions at the end of the validation epoch.
         """
         preds = torch.cat(self.val_preds)
         targets = torch.cat(self.val_targets)
@@ -170,19 +169,9 @@ class GenericModel(pl.LightningModule):
         self.val_confusion_matrix = self.val_confusion_matrix.to(preds.device)
         self.val_confusion_matrix.update(preds, targets)
         fig, _ = self.val_confusion_matrix.plot()
-        self.logger.experiment.add_figure(
-            "val_confusion_matrix", fig, self.current_epoch
-        )
-
+        self.logger.experiment.log_figure(self.logger.run_id, fig, "val_roc_curve.png")
         self.val_preds.clear()
         self.val_targets.clear()
-
-        val_acc = self.trainer.callback_metrics.get("val_acc")
-        val_loss = self.trainer.callback_metrics.get("val_loss")
-        if val_acc is not None and val_loss is not None:
-            print(
-                f"\nEpoch {self.current_epoch}: val_acc = {val_acc:.4f}, val_loss = {val_loss:.4f}"
-            )
 
     def test_step(self, batch: tuple, batch_idx: int) -> torch.Tensor:
         """
@@ -206,8 +195,8 @@ class GenericModel(pl.LightningModule):
         self.test_macro_f1(probs, labels)
         self.test_auroc(probs, labels)
 
-        self.log("test_loss", loss, on_step=False, on_epoch=True)
-        self.log("test_acc", self.test_acc, on_epoch=True)
+        self.log("test_loss", loss, on_epoch=True, prog_bar=True)
+        self.log("test_acc", self.test_acc, on_epoch=True, prog_bar=True)
         self.log("test_precision", self.test_precision, on_epoch=True)
         self.log("test_recall", self.test_recall, on_epoch=True)
         self.log("test_macro_f1", self.test_macro_f1, on_epoch=True)
@@ -220,7 +209,7 @@ class GenericModel(pl.LightningModule):
 
     def on_test_epoch_end(self) -> None:
         """
-        Perform actions at the end of the test epoch, such as updating and logging the confusion matrix.
+        Perform actions at the end of the test epoch.
         """
         preds = torch.cat(self.test_preds)
         targets = torch.cat(self.test_targets)
@@ -228,9 +217,6 @@ class GenericModel(pl.LightningModule):
         self.test_confusion_matrix = self.test_confusion_matrix.to(preds.device)
         self.test_confusion_matrix.update(preds, targets)
         fig, _ = self.test_confusion_matrix.plot()
-        self.logger.experiment.add_figure(
-            "test_confusion_matrix", fig, self.current_epoch
-        )
-
+        self.logger.experiment.log_figure(self.logger.run_id, fig, "test_roc_curve.png")
         self.test_preds.clear()
         self.test_targets.clear()

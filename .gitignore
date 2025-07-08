@@ -1,3 +1,9 @@
+# Mlflow
+mlruns/
+mlartifacts/
+outputs/
+mlruns.db
+
 # Custom
 lightning_logs/
 saved_models/

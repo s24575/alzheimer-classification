@@ -53,7 +53,7 @@ class AlzheimerDataModule(pl.LightningDataModule):
         test_transform: transforms.Compose | None = None,
     ):
         super().__init__()
-        self.root_dir: str | None = None
+        self.root_dir: str = ""
         self.batch_size = batch_size
 
         self.train_dataset: Dataset | None = None
@@ -63,18 +63,17 @@ class AlzheimerDataModule(pl.LightningDataModule):
         self.train_transform = train_transform
         self.test_transform = test_transform
 
-    def prepare_data(self):
+    def prepare_data(self) -> None:
         self.root_dir = kagglehub.dataset_download(
             "uraninjo/augmented-alzheimer-mri-dataset"
         )
-        print("Path to dataset files:", self.root_dir)
 
-    def setup(self, stage: str = None) -> None:
+    def setup(self, stage: str) -> None:
         """
         Sets up the datasets for training, validation, and testing.
 
         Args:
-            stage (str, optional): Stage of setup (fit or test). Defaults to None.
+            stage (str): Stage of setup (fit or test).
         """
         augmented_dir = os.path.join(self.root_dir, "AugmentedAlzheimerDataset")
         full_dataset = datasets.ImageFolder(augmented_dir)
