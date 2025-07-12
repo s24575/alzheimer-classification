@@ -3,7 +3,8 @@ import shutil
 from typing import Any
 
 from fastapi import FastAPI, File, UploadFile
-from predict import predict_image_from_path
+
+from alzheimer_classification.predict import predict_image_from_path
 
 app = FastAPI()
 

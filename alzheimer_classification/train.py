@@ -2,11 +2,12 @@ import hydra
 import mlflow
 import pytorch_lightning as pl
 import torch
-from alzheimer_dataset import AlzheimerDataModule
-from models.model_utils import get_model
 from omegaconf import DictConfig
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import MLFlowLogger
+
+from alzheimer_classification.alzheimer_dataset import AlzheimerDataModule
+from alzheimer_classification.models import get_model
 
 
 def train(cfg: DictConfig) -> None:
@@ -37,9 +38,7 @@ def train(cfg: DictConfig) -> None:
     )
 
     mlflow.pytorch.autolog()
-    mlflow.set_tracking_uri("http://localhost:5000")
     with mlflow.start_run(log_system_metrics=True, run_name="training_test") as run:
-        # Setup logger
         mlf_logger = MLFlowLogger(
             experiment_name="alzheimer-classification",
             tracking_uri=mlflow.get_tracking_uri(),
@@ -47,7 +46,6 @@ def train(cfg: DictConfig) -> None:
             run_id=run.info.run_id,
         )
 
-        # Setup trainer
         trainer = pl.Trainer(
             max_epochs=cfg.trainer.max_epochs,
             callbacks=[checkpoint_callback, early_stop_callback],
@@ -60,11 +58,8 @@ def train(cfg: DictConfig) -> None:
             # num_sanity_val_steps=0,
         )
 
-        # Train the model
         trainer.fit(model, data_module)
-
-    # Test the model
-    trainer.test(model, data_module)
+        trainer.test(model, data_module)
 
 
 @hydra.main(config_path="../configs", config_name="train.yaml", version_base="1.3")

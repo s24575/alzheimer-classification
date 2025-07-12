@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as F  # noqa: N812
 import torchmetrics
 from torchmetrics.classification import AUROC, MulticlassConfusionMatrix
 

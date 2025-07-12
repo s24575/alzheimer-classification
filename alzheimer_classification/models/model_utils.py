@@ -1,9 +1,10 @@
 from enum import StrEnum
 
 import torch
-from models.generic_model import GenericModel
-from models.simple_cnn import SimpleCNN
-from models.vgg16 import VGG16Model
+
+from alzheimer_classification.models.generic_model import GenericModel
+from alzheimer_classification.models.simple_cnn import SimpleCNN
+from alzheimer_classification.models.vgg16 import VGG16Model
 
 
 class ModelName(StrEnum):
