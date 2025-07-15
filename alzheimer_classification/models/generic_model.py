@@ -169,7 +169,9 @@ class GenericModel(pl.LightningModule):
         self.val_confusion_matrix = self.val_confusion_matrix.to(preds.device)
         self.val_confusion_matrix.update(preds, targets)
         fig, _ = self.val_confusion_matrix.plot()
-        self.logger.experiment.log_figure(self.logger.run_id, fig, "val_roc_curve.png")
+        self.logger.experiment.log_figure(
+            self.logger.run_id, fig, "val_confusion_matrix.png"
+        )
         self.val_preds.clear()
         self.val_targets.clear()
 
@@ -217,6 +219,8 @@ class GenericModel(pl.LightningModule):
         self.test_confusion_matrix = self.test_confusion_matrix.to(preds.device)
         self.test_confusion_matrix.update(preds, targets)
         fig, _ = self.test_confusion_matrix.plot()
-        self.logger.experiment.log_figure(self.logger.run_id, fig, "test_roc_curve.png")
+        self.logger.experiment.log_figure(
+            self.logger.run_id, fig, "test_confusion_matrix.png"
+        )
         self.test_preds.clear()
         self.test_targets.clear()

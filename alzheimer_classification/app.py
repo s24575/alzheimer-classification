@@ -1,25 +1,48 @@
-import os
-import shutil
-from typing import Any
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from pydantic import BaseModel
 
-from fastapi import FastAPI, File, UploadFile
+from alzheimer_classification.model_service import ModelService
 
-from alzheimer_classification.predict import predict_image_from_path
+MODEL_URI = "models:/alzheimer_classification/latest"
+
+
+class PredictionResponse(BaseModel):
+    prediction: str
+    confidence: float
+
+
+class ReloadModelRequest(BaseModel):
+    model_uri: str
+
+    model_config = {"json_schema_extra": {"example": {"model_uri": MODEL_URI}}}
+
+
+class ReloadModelResponse(BaseModel):
+    detail: str
+
 
 app = FastAPI()
+model_service = ModelService(MODEL_URI)
 
 
 @app.post("/predict")
-async def predict(file: UploadFile = File(...)) -> dict[str, Any]:
-    temp_path = f"temp_{file.filename}"
-    with open(temp_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
+async def predict(file: UploadFile = File(...)) -> PredictionResponse:
+    if file.content_type not in ["image/png", "image/jpeg", "application/octet-stream"]:
+        raise HTTPException(status_code=400, detail="Unsupported file type.")
     try:
-        predicted_class, confidence = predict_image_from_path(temp_path, "test")
+        image_bytes = await file.read()
+        prediction, confidence = model_service.predict(image_bytes)
+        return PredictionResponse(prediction=prediction, confidence=confidence)
     except Exception as e:
-        return {"error": str(e)}
-    finally:
-        os.remove(temp_path)
+        raise HTTPException(status_code=500, detail=str(e))
 
-    return {"class": predicted_class, "confidence": confidence}
+
+@app.post("/reload-model")
+def reload_model(request: ReloadModelRequest) -> ReloadModelResponse:
+    try:
+        model_service.reload(request.model_uri)
+        return ReloadModelResponse(
+            detail=f"Model successfully reloaded from {request.model_uri}"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Reload failed: {str(e)}")
