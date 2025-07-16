@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - 8000:8000
+    networks:
+      - deploy_network
+    container_name: backend
+    environment:
+      - MLFLOW_TRACKING_URI=http://host.docker.internal:8080
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      - backend
+    ports:
+        - 8501:8501
+    networks:
+      - deploy_network
+    container_name: frontend
+
+networks:
+  deploy_network:
+    driver: bridge

@@ -2,15 +2,21 @@
 
 The purpose of this project is to detect the stage of Alzheimer's based on MRI images.
 
-# Dataset
+[//]: # (# Dataset)
 
-The models are designed to be trained on [Alzheimer's Dataset ( 4 class of Images)](https://www.kaggle.com/datasets/tourist55/alzheimers-dataset-4-class-of-images) from Kaggle.
-It has already been downloaded and is available in the dataset/ directory.
+[//]: # ()
+[//]: # (The models are designed to be trained on [Alzheimer's Dataset &#40; 4 class of Images&#41;]&#40;https://www.kaggle.com/datasets/tourist55/alzheimers-dataset-4-class-of-images&#41; from Kaggle.)
 
-<p align="center">
-  <img src="images/train_dataset.png" alt="Train Dataset" width="49%" />
-  <img src="images/test_dataset.png" alt="Test Dataset" width="49%" />
-</p>
+[//]: # (It has already been downloaded and is available in the dataset/ directory.)
+
+[//]: # ()
+[//]: # (<p align="center">)
+
+[//]: # (  <img src="assets/train_dataset.png" alt="Train Dataset" width="49%" />)
+
+[//]: # (  <img src="assets/test_dataset.png" alt="Test Dataset" width="49%" />)
+
+[//]: # (</p>)
 
 # Usage
 

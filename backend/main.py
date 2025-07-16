@@ -1,7 +1,7 @@
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from alzheimer_classification.model_service import ModelService
+from backend.model_service import ModelService
 
 MODEL_URI = "models:/alzheimer_classification/latest"
 

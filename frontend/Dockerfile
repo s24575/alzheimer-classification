@@ -10,10 +10,10 @@ WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
 
-RUN poetry install --without dev --no-root
+RUN poetry install --with frontend --no-root
 
-COPY alzheimer_classification ./alzheimer_classification
+COPY frontend ./frontend
 
-EXPOSE 8000
+EXPOSE 8501
 
-CMD ["uvicorn", "alzheimer_classification.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["streamlit", "run", "frontend/app.py", "--server.address=0.0.0.0", "--server.port=8501"]

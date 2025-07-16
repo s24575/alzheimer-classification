@@ -1,6 +1,5 @@
 import threading
 from io import BytesIO
-from typing import Tuple
 
 import mlflow.pytorch
 import torch
@@ -25,7 +24,7 @@ class ModelService:
             self.model_uri = new_model_uri
             self.model = self._load_model()
 
-    def predict(self, image_bytes: bytes) -> Tuple[str, float]:
+    def predict(self, image_bytes: bytes) -> tuple[str, float]:
         with self.lock:
             image_tensor = self._preprocess_image(image_bytes)
             predictions = self._predict_tensor(image_tensor)

@@ -19,5 +19,6 @@ if uploaded_file:
 
         if response.ok:
             result = response.json()
-            st.write("🧾 Prediction:", result["prediction"])
-            st.progress(result["confidence"])
+            st.write("### 🧠 Prediction Result")
+            st.write(f"Prediction: {result['prediction']}")
+            st.write(f"Confidence: {result['confidence']:.1%}")
